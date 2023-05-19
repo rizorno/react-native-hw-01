@@ -1,21 +1,40 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
+import "react-native-gesture-handler";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { useFonts } from "expo-font";
+import RegistrationScreen from "./Screens/RegistrationScreen";
+import LoginScreen from "./Screens/LoginScreen";
+import PostsScreen from "./Screens/PostsScreen";
+
+const MainStack = createStackNavigator();
 
 export default function App() {
+  const [fontsLoaded, error] = useFonts({
+    Roboto_Medium: require("./assets/fonts/Roboto/Roboto-Medium.ttf"),
+    Roboto_Regular: require("./assets/fonts/Roboto/Roboto-Regular.ttf"),
+  });
+  
+  if (!fontsLoaded) {
+   console.log(error)
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Pashko Mykhailo</Text>
-      <Text>GOIT. Home work on React Native 16.05.2023</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <MainStack.Navigator initialRouteName="Registration">
+        <MainStack.Screen
+          name="Registration"
+          component={RegistrationScreen}
+          options={{ headerShown: false }}
+        />
+        <MainStack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+
+        <MainStack.Screen name="Posts" component={PostsScreen} />
+      </MainStack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
