@@ -129,6 +129,7 @@ const LoginScreen = () => {
                   console.log(state);
                   setState(initialState);
                   setIsFocused(initialState);
+                  navigation.navigate("Home");
                 }}
               >
                 <Text style={styles.btnText}>Sign up</Text>

@@ -1,9 +1,9 @@
-import { Text, View, StyleSheet } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 
-const PostsScreen = () => {
+const CommentsScreen = () => {
   return (
     <View style={styles.container}>
-      <Text>PostsScreen</Text>
+      <Text>CommentsScreen</Text>
     </View>
   );
 };
@@ -16,4 +16,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PostsScreen;
+export default CommentsScreen;
