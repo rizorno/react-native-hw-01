@@ -108,8 +108,8 @@ const RegistrationScreen = () => {
                 <TextInput
                   style={
                     isFocused.password === "focus"
-                      ? styles.inputActive
-                      : styles.inputDefault
+                      ? styles.inputPasswordActive
+                      : styles.inputPasswordDefault
                   }
                   type="password"
                   placeholder="Password"
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     lineHeight: 35,
     letterSpacing: 0.01,
-    textAlign: "center",
+    textAlignVertical: "top",
     marginBottom: 33,
   },
   inputActive: {
@@ -261,6 +261,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 19,
     paddingHorizontal: 16,
+    paddingVertical: 5,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "#FF6C00",
@@ -274,6 +275,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 19,
     paddingHorizontal: 16,
+    paddingVertical: 5,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+    borderRadius: 8,
+  },
+  inputPasswordActive: {
+    height: 50,
+    width: "100%",
+    color: "#212121",
+    fontFamily: "Roboto_Regular",
+    fontSize: 16,
+    lineHeight: 19,
+    paddingVertical: 5,
+    paddingStart: 16,
+    paddingEnd: 65,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#FF6C00",
+    borderRadius: 8,
+  },
+  inputPasswordDefault: {
+    height: 50,
+    width: "100%",
+    backgroundColor: "#F6F6F6",
+    fontFamily: "Roboto_Regular",
+    fontSize: 16,
+    lineHeight: 19,
+    paddingVertical: 5,
+    paddingStart: 16,
+    paddingEnd: 65,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "#E8E8E8",
