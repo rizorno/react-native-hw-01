@@ -6,6 +6,9 @@ import {
 } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { Provider } from "react-redux";
+import { store, persistor } from "./redux/store";
+import { PersistGate } from "redux-persist/integration/react";
 import { useFonts } from "expo-font";
 import RegistrationScreen from "./Screens/RegistrationScreen";
 import LoginScreen from "./Screens/LoginScreen";
@@ -47,76 +50,80 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <MainStack.Navigator
-        initialRouteName="Registration"
-        screenOptions={{
-          headerBackTitleVisible: false,
-          headerStyle: {
-            borderBottomColor: "rgba(0, 0, 0, 0.3)",
-          },
-          headerTitleStyle: {
-            color: "#212121",
-            fontFamily: "Roboto_Medium",
-            fontSize: 17,
-            lineHeight: 22,
-          },
-        }}
-      >
-        <MainStack.Group
-          screenOptions={{
-            headerBackImage: () => {},
-            headerShown: false,
-          }}
-        >
-          <MainStack.Screen
-            name="Registration"
-            component={RegistrationScreen}
-          />
-          <MainStack.Screen name="Login" component={LoginScreen} />
-        </MainStack.Group>
-
-        <MainStack.Group
-          screenOptions={{
-            headerBackImage: () => arrowLeft,
-          }}
-        >
-          <MainStack.Screen
-            name="Home"
-            component={Home}
-            options={({ navigation, route }) => ({
-              headerTitle: getHeaderTitle(route),
-              headerBackImage: () => {},
-              headerBackTitleVisible: false,
-              headerRight: () => {
-                return (
-                  <TouchableOpacity
-                    style={{ marginRight: 16 }}
-                    onPress={() => navigation.navigate("Login")}
-                  >
-                    <View>{logOut}</View>
-                  </TouchableOpacity>
-                );
-              },
-            })}
-          />
-
-          <MainStack.Group
+   //  <Provider store={store}>
+   //    <PersistGate persistor={persistor}>
+        <NavigationContainer>
+          <MainStack.Navigator
+            initialRouteName="Registration"
             screenOptions={{
-              headerLeftContainerStyle: {
-                paddingLeft: 16,
+              headerBackTitleVisible: false,
+              headerStyle: {
+                borderBottomColor: "rgba(0, 0, 0, 0.3)",
               },
-              headerTitleContainerStyle: {
-                paddingRight: 16,
+              headerTitleStyle: {
+                color: "#212121",
+                fontFamily: "Roboto_Medium",
+                fontSize: 17,
+                lineHeight: 22,
               },
             }}
           >
-            <MainStack.Screen name="Comments" component={CommentsScreen} />
-            <MainStack.Screen name="Map" component={MapScreen} />
-          </MainStack.Group>
-        </MainStack.Group>
-      </MainStack.Navigator>
-    </NavigationContainer>
+            <MainStack.Group
+              screenOptions={{
+                headerBackImage: () => {},
+                headerShown: false,
+              }}
+            >
+              <MainStack.Screen
+                name="Registration"
+                component={RegistrationScreen}
+              />
+              <MainStack.Screen name="Login" component={LoginScreen} />
+            </MainStack.Group>
+
+            <MainStack.Group
+              screenOptions={{
+                headerBackImage: () => arrowLeft,
+              }}
+            >
+              <MainStack.Screen
+                name="Home"
+                component={Home}
+                options={({ navigation, route }) => ({
+                  headerTitle: getHeaderTitle(route),
+                  headerBackImage: () => {},
+                  headerBackTitleVisible: false,
+                  headerRight: () => {
+                    return (
+                      <TouchableOpacity
+                        style={{ marginRight: 16 }}
+                        onPress={() => navigation.navigate("Login")}
+                      >
+                        <View>{logOut}</View>
+                      </TouchableOpacity>
+                    );
+                  },
+                })}
+              />
+
+              <MainStack.Group
+                screenOptions={{
+                  headerLeftContainerStyle: {
+                    paddingLeft: 16,
+                  },
+                  headerTitleContainerStyle: {
+                    paddingRight: 16,
+                  },
+                }}
+              >
+                <MainStack.Screen name="Comments" component={CommentsScreen} />
+                <MainStack.Screen name="Map" component={MapScreen} />
+              </MainStack.Group>
+            </MainStack.Group>
+          </MainStack.Navigator>
+        </NavigationContainer>
+   //    </PersistGate>
+   //  </Provider>
   );
 }
 
