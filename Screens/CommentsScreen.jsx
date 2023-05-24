@@ -138,11 +138,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     paddingBottom: 32,
     paddingLeft: 16,
-    paddingRight: 14,
+    paddingRight: 16,
   },
   flexList: {
     flex: 1,
-    paddingRight: 20,
   },
   myPostImage: {
     width: "99%",
@@ -154,7 +153,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     columnGap: 10,
     marginTop: 24,
-    marginRight: 10,
   },
   postBoxOdd: {
     flexDirection: "row-reverse",
