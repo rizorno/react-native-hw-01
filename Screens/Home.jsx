@@ -1,13 +1,8 @@
-import { View, StyleSheet, TouchableOpacity } from "react-native";
-import {
-  createBottomTabNavigator,
-  BottomTabBarHeightContext,
-} from "@react-navigation/bottom-tabs";
+import { TouchableOpacity } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import PostsScreen from "./PostsScreen";
 import CreatePostsScreen from "./CreatePostsScreen";
-import CommentsScreen from "./CommentsScreen";
 import ProfileScreen from "./ProfileScreen";
-import MapScreen from "./MapScreen";
 import { grid, plus, user } from "../images/iconsSVG";
 
 const Tabs = createBottomTabNavigator();

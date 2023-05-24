@@ -15,9 +15,9 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import bgAndroid from "../images/bgAndroid.png";
 import bgIOS from "../images/bgIOS.png";
-import avaAndroid from "../images/avaAndroid.png";
-import avaIOS from "../images/avaIOS.png";
 import { btnAdd, btnRemove } from "../images/iconsSVG";
+
+import { USER } from "./DATA";
 
 const initialState = {
   login: "",
@@ -29,7 +29,7 @@ const RegistrationScreen = () => {
   const [state, setState] = useState(initialState);
   const [isFocused, setIsFocused] = useState(initialState);
   const [hidden, setHidden] = useState(true);
-  const [ava, setAva] = useState(null);
+  const [ava, setAva] = useState();
   const navigation = useNavigation();
 
   return (
@@ -45,18 +45,17 @@ const RegistrationScreen = () => {
             keyboardVerticalOffset={-180}
           >
             <View style={styles.container}>
-              <Image
-                source={ava}
-                style={ava ? styles.avaImage : styles.avaNoImage}
-              />
+              <View style={(ava && styles.avaImageBox) || styles.avaNoImageBox}>
+                {ava && <Image source={ava} style={styles.avaImage} />}
+              </View>
 
               <TouchableOpacity
                 style={ava ? styles.avaRemoveBox : styles.avaAddBox}
                 onPress={() => {
-                  if (!ava) {
-                    Platform.OS == "ios" ? setAva(avaIOS) : setAva(avaAndroid);
+                  if (ava === "") {
+                    setAva(USER[0].ava);
                   } else {
-                    setAva(null);
+                    return setAva("");
                   }
                 }}
               >
@@ -161,9 +160,7 @@ const RegistrationScreen = () => {
 
               <Text
                 style={styles.btnLogin}
-                onPress={() => {
-                  navigation.navigate("Login");
-                }}
+                onPress={() => navigation.navigate("Login")}
               >
                 Already have an account? Login
               </Text>
@@ -193,11 +190,21 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
   },
-  avaNoImage: {
+  avaNoImageBox: {
     position: "absolute",
     top: "-14%",
     left: "37%",
-    zIndex: 2,
+    width: 120,
+    height: 120,
+    backgroundColor: "#F6F6F6",
+    borderWidth: 1,
+    borderColor: "#F6F6F6",
+    borderRadius: 16,
+  },
+  avaImageBox: {
+    position: "absolute",
+    top: "-14%",
+    left: "37%",
     width: 120,
     height: 120,
     backgroundColor: "#F6F6F6",
@@ -206,15 +213,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   avaImage: {
-    position: "absolute",
-    top: "-14%",
-    left: "37%",
-    zIndex: 2,
-    width: 120,
-    height: 120,
-    borderWidth: 1,
-    borderColor: "#F6F6F6",
-    borderRadius: 16,
+    width: "100%",
+    height: "100%",
   },
   avaAddBox: {
     position: "absolute",
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     lineHeight: 35,
     letterSpacing: 0.01,
-    textAlignVertical: "top",
+    textAlign: "center",
     marginBottom: 33,
   },
   inputActive: {
