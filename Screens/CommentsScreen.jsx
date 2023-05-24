@@ -12,6 +12,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { nanoid } from "nanoid";
 import { format, parseISO } from "date-fns";
 import { btnSend } from "../images/iconsSVG";
 
@@ -26,9 +27,10 @@ const CommentsScreen = ({ route }) => {
 
   const [commentsList, setCommentsList] = useState(post["comments_text"]);
 
+  const newId = nanoid();
   const date = new Date().toISOString();
   const newComment = {
-    id: "01+3w",
+    id: newId,
     date: date,
     user_id: USER[0].id,
     user_ava: avaUser,
