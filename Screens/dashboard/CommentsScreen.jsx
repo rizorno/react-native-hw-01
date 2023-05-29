@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import {
   FlatList,
   Image,
@@ -9,72 +10,109 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { nanoid } from "nanoid";
 import { format, parseISO } from "date-fns";
-import { btnSend } from "../images/iconsSVG";
-
-import { USER, POSTS } from "./DATA";
-import avaUser from "../images/avaUser.png";
+import { collection, addDoc, getDocs } from "firebase/firestore";
+import { db } from "../../firebase/config";
+import { getUser } from "../../redux/auth/authSelectors";
+import avaUser from "../../images/avaUser.png";
+import avaComment from "../../images/avaComment.png";
+import { btnSend } from "../../images/iconsSVG";
 
 const CommentsScreen = ({ route }) => {
+  const { postId, pictureURL } = route.params;
+  const { uid, name, avatarURL } = useSelector(getUser);
   const [isFocused, setIsFocused] = useState("");
   const [comment, setComment] = useState("");
+  const [commentsList, setCommentsList] = useState([]);
 
-  const post = POSTS.find((item) => item.id === route.params.selectedPost);
+  useEffect(() => {
+    getAllComments();
+  }, []);
 
-  const [commentsList, setCommentsList] = useState(post["comments_text"]);
+  const uploadCommentToServer = async () => {
+    const date = new Date().toISOString();
+    const dataComment = {
+      date: date,
+      user_id: uid,
+      user_ava: avatarURL,
+      user_text: comment,
+    };
 
-  const newId = nanoid();
-  const date = new Date().toISOString();
-  const newComment = {
-    id: newId,
-    date: date,
-    user_id: USER[0].id,
-    user_ava: avaUser,
-    user_text: comment,
+    try {
+      const docRef = await addDoc(
+        collection(db, "posts", postId, "comments"),
+        dataComment
+      );
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  const getAllComments = async () => {
+    try {
+      const querySnapshot = await getDocs(
+        collection(db, "posts", postId, "comments")
+      );
+
+      let commentsArr = [];
+      await querySnapshot.forEach((doc) => {
+        commentsArr.push({
+          id: doc.id,
+          ...doc.data(),
+        });
+        return commentsArr;
+      });
+
+      setCommentsList(commentsArr);
+    } catch (error) {
+      console.log(error.message);
+      throw error;
+    }
   };
 
   onSubmit = () => {
-    setCommentsList([...commentsList, newComment]);
+    uploadCommentToServer();
     setComment("");
   };
 
   return (
-    //  <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.container}>
       <View style={styles.flexList}>
         <FlatList
           data={commentsList}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={
-            <Image source={post.picture} style={styles.myPostImage} />
+            <View>
+              <Image source={{ uri: pictureURL }} style={styles.myPostImage} />
+            </View>
           }
           renderItem={({ item }) => {
             return (
               <View
                 style={
-                  item.user_id == USER[0].id
-                    ? styles.postBoxOdd
-                    : styles.postBoxEven
+                  item.user_id == uid ? styles.postBoxOdd : styles.postBoxEven
                 }
               >
                 <View style={styles.userAvaBox}>
-                  <Image source={item["user_ava"]} style={styles.userAva} />
+                  {/* <Image source={{uri: item.user_ava}} style={styles.userAva} /> */}
+                  <Image
+                    source={item.user_id === uid ? avaUser : avaComment}
+                    style={styles.userAva}
+                  />
                 </View>
                 <View
                   style={
-                    item.user_id == USER[0].id
+                    item.user_id == uid
                       ? styles.commentWrapperOdd
                       : styles.commentWrapperEven
                   }
                 >
-                  <Text style={styles.commentText}>{item["user_text"]}</Text>
+                  <Text style={styles.commentText}>{item.user_text}</Text>
                   <Text
                     style={
-                      item.user_id !== USER[0].id
+                      item.user_id !== uid
                         ? styles.commentDateOdd
                         : styles.commentDateEven
                     }
@@ -128,7 +166,6 @@ const CommentsScreen = ({ route }) => {
         </View>
       </KeyboardAvoidingView>
     </View>
-    //  < /TouchableWithoutFeedback>
   );
 };
 
@@ -145,6 +182,7 @@ const styles = StyleSheet.create({
   },
   myPostImage: {
     width: "99%",
+    height: 240,
     borderRadius: 8,
     marginTop: 32,
     marginBottom: 32,
@@ -153,8 +191,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     columnGap: 10,
     marginTop: 24,
+    maxWidth: 255,
   },
   postBoxOdd: {
+    maxWidth: "99%",
     flexDirection: "row-reverse",
     columnGap: 10,
     marginTop: 24,

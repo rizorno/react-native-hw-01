@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import PostsScreen from "./PostsScreen";
 import CreatePostsScreen from "./CreatePostsScreen";
 import ProfileScreen from "./ProfileScreen";
-import { grid, plus, user } from "../images/iconsSVG";
+import { grid, plus, user } from "../../images/iconsSVG";
 
 const Tabs = createBottomTabNavigator();
 

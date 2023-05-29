@@ -1,20 +1,18 @@
 import { Dimensions, StyleSheet, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
-import { USER, POSTS } from "./DATA";
-
 const MapScreen = ({ route }) => {
-  const selectedPost = POSTS.find(
-    (item) => item.id === route.params.selectedPost
-  );
+  const { latitude, longitude } = route.params.postCoords;
+  const { localisation } = route.params.postPlace;
+  const { title } = route.params.postTitle;
 
   return (
     <View style={styles.container}>
       <MapView
         style={styles.mapStyle}
         region={{
-          latitude: 37.78825,
-          longitude: -122.4324,
+          latitude,
+          longitude,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
         }}
@@ -24,9 +22,9 @@ const MapScreen = ({ route }) => {
         //   onRegionChange={() => console.log("Region change")}
       >
         <Marker
-          title={selectedPost.localisation}
-          coordinate={{ latitude: 37.78825, longitude: -122.4324 }}
-          description={selectedPost.title}
+          title={localisation}
+          coordinate={{ latitude, longitude }}
+          description={title}
         />
       </MapView>
     </View>

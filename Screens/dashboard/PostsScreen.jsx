@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
   FlatList,
   Image,
@@ -9,15 +10,51 @@ import {
   View,
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { comment, local } from "../images/iconsSVG";
-
-import { USER, POSTS } from "./DATA";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebase/config";
+import { getCurrentUserThunk } from "../../redux/auth/authOperations";
+import { getUser } from "../../redux/auth/authSelectors";
+import { getPosts } from "../../redux/dashboard/postSelectors";
+import { setPostsDB } from "../../redux/dashboard/postSlise";
+import { getAllPostsThunk } from "../../redux/dashboard/postOperations";
+import { comment, local } from "../../images/iconsSVG";
+import avaUser from "../../images/avaUser.png";
 
 const Tabs = createBottomTabNavigator();
 
 const PostsScreen = ({ navigation }) => {
-  const [user, setUser] = useState(USER[0]);
-  const [posts, setPosts] = useState(POSTS);
+  const userInfo = useSelector(getUser);
+  const [user, setUser] = useState(userInfo);
+  const postsDataArr = useSelector(getPosts);
+  const [posts, setPosts] = useState(postsDataArr);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(getCurrentUserThunk());
+    dispatch(getAllPostsThunk());
+    getAllPosts();
+  }, [dispatch]);
+
+  const getAllPosts = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "posts"));
+
+      let postsArr = [];
+      await querySnapshot.forEach((doc) => {
+        postsArr.push({
+          id: doc.id,
+          ...doc.data(),
+        });
+        return postsArr;
+      });
+
+      setPosts(postsArr);
+      // setPostsDB(postsArr);
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -26,7 +63,8 @@ const PostsScreen = ({ navigation }) => {
           style={styles.userPhotoBox}
           onPress={() => navigation.navigate("Profile")}
         >
-          <Image source={user.ava} style={styles.userPhoto} />
+          {/* <Image source={{uri: avatarURL}} style={styles.userPhoto} /> */}
+          <Image source={avaUser} style={styles.userPhoto} />
         </TouchableOpacity>
         <View style={styles.userInfoBox}>
           <Text style={styles.userName}>{user.name}</Text>
@@ -40,13 +78,21 @@ const PostsScreen = ({ navigation }) => {
         renderItem={({ item }) => {
           return (
             <View style={styles.postBox}>
-              <Image source={item.picture} style={styles.myPostImage} />
+              <View>
+                <Image
+                  source={{ uri: item.picture }}
+                  style={styles.myPostImage}
+                />
+              </View>
               <Text style={styles.myPostTitle}>{item.title}</Text>
               <View style={styles.touchWrapper}>
                 <TouchableOpacity
                   style={styles.infoBoxComment}
                   onPress={() =>
-                    navigation.navigate("Comments", { selectedPost: item.id })
+                    navigation.navigate("Comments", {
+                      postId: item.id,
+                      pictureURL: item.picture,
+                    })
                   }
                 >
                   <View>{comment}</View>
@@ -56,7 +102,11 @@ const PostsScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={styles.infoBoxLocal}
                   onPress={() =>
-                    navigation.navigate("Map", { selectedPost: item.id })
+                    navigation.navigate("Map", {
+                      postCoords: item.coords,
+                      postPlace: item.localisation,
+                      postTitle: item.title,
+                    })
                   }
                 >
                   <View style={styles.localIcon}>{local}</View>
@@ -113,7 +163,7 @@ const styles = StyleSheet.create({
   },
   myPostImage: {
     width: "99%",
-    //  height: 240,
+    height: 240,
     marginBottom: 8,
     borderRadius: 8,
   },

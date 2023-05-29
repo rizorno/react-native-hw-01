@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import {
   Image,
   ImageBackground,
@@ -13,24 +14,36 @@ import {
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import bgAndroid from "../images/bgAndroid.png";
-import bgIOS from "../images/bgIOS.png";
-import { btnAdd, btnRemove } from "../images/iconsSVG";
+import { loginThunk } from "../../redux/auth/authOperations";
+import bgAndroid from "../../images/bgAndroid.png";
+import bgIOS from "../../images/bgIOS.png";
+import { btnAdd, btnRemove } from "../../images/iconsSVG";
 
-import { USER } from "./DATA";
+import { USER } from "../DATA";
 
 const initialState = {
-  login: "",
   email: "",
   password: "",
 };
 
-const RegistrationScreen = () => {
+const LoginScreen = () => {
   const [state, setState] = useState(initialState);
   const [isFocused, setIsFocused] = useState(initialState);
   const [hidden, setHidden] = useState(true);
-  const [ava, setAva] = useState();
+  const [ava, setAva] = useState("");
+  const dispatch = useDispatch();
   const navigation = useNavigation();
+
+  const handleSubmit = () => {
+    if (state.email === "" || state.password === "") {
+      return;
+    }
+    dispatch(loginThunk(state));
+    Keyboard.dismiss();
+    setState(initialState);
+    setIsFocused(initialState);
+    // navigation.navigate("Home");
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -62,26 +75,7 @@ const RegistrationScreen = () => {
                 {ava ? btnRemove : btnAdd}
               </TouchableOpacity>
 
-              <Text style={styles.title}>Registration</Text>
-
-              <TextInput
-                style={
-                  isFocused.login === "focus"
-                    ? styles.inputActive
-                    : styles.inputDefault
-                }
-                type="text"
-                placeholder="Login"
-                placeholderTextColor="#BDBDBD"
-                maxLength={250}
-                autoComplete="username"
-                keyboardType="default"
-                value={state.login}
-                defaultValue={state.login}
-                onChangeText={(value) => setState({ ...state, login: value })}
-                onBlur={() => setIsFocused({ ...state, login: "" })}
-                onFocus={() => setIsFocused({ ...state, login: "focus" })}
-              />
+              <Text style={styles.title}>Log in</Text>
 
               <TextInput
                 style={
@@ -98,9 +92,18 @@ const RegistrationScreen = () => {
                 keyboardType="email-address"
                 value={state.email}
                 defaultValue={state.email}
-                onChangeText={(value) => setState({ ...state, email: value })}
-                onBlur={() => setIsFocused({ ...state, email: "" })}
-                onFocus={() => setIsFocused({ ...state, email: "focus" })}
+                onChangeText={(value) =>
+                  setState((prevState) => ({ ...prevState, email: value }))
+                }
+                onBlur={() =>
+                  setIsFocused((prevState) => ({ ...prevState, email: "" }))
+                }
+                onFocus={() =>
+                  setIsFocused((prevState) => ({
+                    ...prevState,
+                    email: "focus",
+                  }))
+                }
               />
 
               <View>
@@ -110,10 +113,12 @@ const RegistrationScreen = () => {
                       ? styles.inputPasswordActive
                       : styles.inputPasswordDefault
                   }
+                  textAlign={"auto"}
                   type="password"
                   placeholder="Password"
                   placeholderTextColor="#BDBDBD"
                   maxLength={250}
+                  numberOfLines={1}
                   autoComplete="off"
                   textContentType="password"
                   keyboardType={
@@ -123,10 +128,20 @@ const RegistrationScreen = () => {
                   value={state.password}
                   defaultValue={state.password}
                   onChangeText={(value) =>
-                    setState({ ...state, password: value })
+                    setState((prevState) => ({ ...prevState, password: value }))
                   }
-                  onBlur={() => setIsFocused({ ...state, password: "" })}
-                  onFocus={() => setIsFocused({ ...state, password: "focus" })}
+                  onBlur={() =>
+                    setIsFocused((prevState) => ({
+                      ...prevState,
+                      password: "",
+                    }))
+                  }
+                  onFocus={() =>
+                    setIsFocused((prevState) => ({
+                      ...prevState,
+                      password: "focus",
+                    }))
+                  }
                 />
 
                 <Text
@@ -139,30 +154,18 @@ const RegistrationScreen = () => {
                 </Text>
               </View>
 
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => {
-                  if (
-                    state.login === "" ||
-                    state.email === "" ||
-                    state.password === ""
-                  ) {
-                    return;
-                  }
-                  console.log(state);
-                  setState(initialState);
-                  setIsFocused(initialState);
-                  navigation.navigate("Home");
-                }}
-              >
+              <TouchableOpacity style={styles.button} onPress={handleSubmit}>
                 <Text style={styles.btnText}>Sign up</Text>
               </TouchableOpacity>
 
               <Text
                 style={styles.btnLogin}
-                onPress={() => navigation.navigate("Login")}
+                onPress={() => {
+                  navigation.navigate("Registration");
+                  setState(initialState);
+                }}
               >
-                Already have an account? Login
+                Don't have an account? Sign up
               </Text>
             </View>
           </KeyboardAvoidingView>
@@ -192,7 +195,7 @@ const styles = StyleSheet.create({
   },
   avaNoImageBox: {
     position: "absolute",
-    top: "-14%",
+    top: "-16%",
     left: "37%",
     width: 120,
     height: 120,
@@ -203,7 +206,7 @@ const styles = StyleSheet.create({
   },
   avaImageBox: {
     position: "absolute",
-    top: "-14%",
+    top: "-16%",
     left: "37%",
     width: 120,
     height: 120,
@@ -315,6 +318,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 16,
     right: 16,
+    zIndex: 1,
     color: "#1B4371",
     fontFamily: "Roboto_Regular",
     fontSize: 16,
@@ -344,4 +348,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RegistrationScreen;
+export default LoginScreen;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import {
   Image,
   Keyboard,
@@ -11,15 +12,18 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { nanoid } from "nanoid";
 import { Camera } from "expo-camera";
 import * as MediaLibrary from "expo-media-library";
 import * as Location from "expo-location";
-import { camera, local, trash } from "../images/iconsSVG";
-
-import { USER, POSTS } from "./DATA";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, addDoc } from "firebase/firestore";
+import { db, storage } from "../../firebase/config";
+import { camera, local, trash } from "../../images/iconsSVG";
 
 const initialState = {
-  picture: null,
+  pictureMetaData: null,
+  pictureCameraURI: null,
   name: "",
   place: "",
   local: "",
@@ -28,12 +32,13 @@ const initialState = {
 
 const { GOOGLE_MAP_KEY } = process.env;
 
-const CreatePostsScreen = ({ navigation, route }) => {
+const CreatePostsScreen = ({ navigation }) => {
   const [state, setState] = useState(initialState);
   const [openCamera, setOpenCamera] = useState(true);
   const [hasPermission, setHasPermission] = useState(null);
   const [cameraRef, setCameraRef] = useState(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     (async () => {
@@ -85,6 +90,61 @@ const CreatePostsScreen = ({ navigation, route }) => {
     })();
   }, [openCamera, navigation]);
 
+  const uploadPhotoToServer = async (uriPicture) => {
+    const response = await fetch(uriPicture);
+    const file = await response.blob();
+
+    const metadata = { contentType: "image/jpeg" };
+
+    const postId = nanoid();
+    const storageRef = ref(storage, `posts/${postId}`);
+
+    const uploadTask = await uploadBytes(storageRef, file, metadata);
+
+    let postURL = "";
+    const downloadTask = await getDownloadURL(storageRef).then((url) => {
+      postURL = url;
+      return postURL;
+    });
+
+    return postURL;
+  };
+
+  const uploadPostToServer = async () => {
+    const pictureURL = await uploadPhotoToServer(state.pictureCameraURI);
+
+    const dataPost = {
+      picture: pictureURL,
+      title: state.name,
+      localisation: state.place,
+      local: state.local,
+      coords: state.coords,
+    };
+
+    try {
+      const docRef = await addDoc(collection(db, "posts"), dataPost);
+      // console.log("Document written with ID: ", docRef.id);
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
+  };
+
+  const onSubmit = () => {
+    if (
+      state.pictureCameraURI === null ||
+      state.name === "" ||
+      state.place === ""
+    ) {
+      return;
+    }
+
+    uploadPostToServer();
+
+    setState(initialState);
+    navigation.navigate("Posts");
+    setOpenCamera(true);
+  };
+
   return (
     <>
       {hasPermission && openCamera ? (
@@ -126,7 +186,11 @@ const CreatePostsScreen = ({ navigation, route }) => {
                     const savedPicture = await MediaLibrary.createAssetAsync(
                       uri
                     );
-                    setState({ ...state, picture: savedPicture });
+                    setState({
+                      ...state,
+                      pictureCameraURI: savedPicture.uri,
+                      pictureMetaData: savedPicture,
+                    });
                     setOpenCamera(false);
                   }
                 }}
@@ -148,24 +212,29 @@ const CreatePostsScreen = ({ navigation, route }) => {
             <View>
               <View
                 style={
-                  state.picture ? styles.photoBoxFull : styles.photoBoxFree
+                  state.pictureCameraURI
+                    ? styles.photoBoxFull
+                    : styles.photoBoxFree
                 }
               >
-                {state.picture ? (
-                  <Image source={state.picture} style={styles.myPhoto} />
+                {state.pictureCameraURI ? (
+                  <Image
+                    source={state.pictureMetaData}
+                    style={styles.myPhoto}
+                  />
                 ) : null}
 
                 <TouchableOpacity
                   style={styles.cameraBox}
                   onPress={() => setOpenCamera(true)}
                 >
-                  {state.picture
+                  {state.pictureCameraURI
                     ? camera("rgba(255, 255, 255, 0.3)", "#ffffff")
                     : camera("#ffffff", "#BDBDBD")}
                 </TouchableOpacity>
               </View>
               <Text style={styles.textUpload}>
-                {state.picture ? "Edid a picture" : "Upload a picture"}
+                {state.pictureCameraURI ? "Edid a picture" : "Upload a picture"}
               </Text>
 
               <View>
@@ -203,30 +272,17 @@ const CreatePostsScreen = ({ navigation, route }) => {
 
               <TouchableOpacity
                 style={
-                  state.picture === null ||
+                  state.pictureCameraURI === null ||
                   state.name === "" ||
                   state.place === ""
                     ? styles.btnNoActive
                     : styles.btnActive
                 }
-                onPress={() => {
-                  if (
-                    state.picture === null ||
-                    state.name === "" ||
-                    state.place === ""
-                  ) {
-                    return;
-                  }
-                  console.log(state);
-
-                  setState(initialState);
-                  navigation.navigate("Posts");
-                  setOpenCamera(true);
-                }}
+                onPress={onSubmit}
               >
                 <Text
                   style={
-                    state.picture === null ||
+                    state.pictureCameraURI === null ||
                     state.name === "" ||
                     state.place === ""
                       ? styles.btnTextNoActive
@@ -241,7 +297,7 @@ const CreatePostsScreen = ({ navigation, route }) => {
                 style={styles.btnTrash}
                 onPress={() => {
                   if (
-                    state.picture === null &&
+                    state.pictureCameraURI === null &&
                     state.name === "" &&
                     state.place === ""
                   ) {
@@ -251,7 +307,7 @@ const CreatePostsScreen = ({ navigation, route }) => {
                 }}
               >
                 <View>
-                  {state.picture === null &&
+                  {state.pictureCameraURI === null &&
                   state.name === "" &&
                   state.place === ""
                     ? trash("#BDBDBD")
