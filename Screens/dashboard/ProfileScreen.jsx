@@ -16,6 +16,7 @@ import {
   uploadAvaToServer,
   uploadAvaToServerThunk,
   cleanAvaToServer,
+  deleteAvaInStorage,
   uploadLikeToServer,
   incrementLikeToServer,
   decrementLikeToServer,
@@ -86,11 +87,14 @@ const ProfileScreen = ({ navigation }) => {
             onPress={async () => {
               if (avatar === null || avatar === "") {
                 const assets = await uploadAva();
-                await uploadAvaToServer(assets[0].uri).then(async (url) => {
-                  uploadAvaToServerThunk({ url, uid });
-                });
+                await uploadAvaToServer(assets[0].uri).then(
+                  async ({ url, avaId }) => {
+                    uploadAvaToServerThunk({ uid, url, avaId });
+                  }
+                );
                 dispatch(getUserAvaThunk(uid));
               } else {
+                await deleteAvaInStorage(uid);
                 cleanAvaToServer(uid);
                 dispatch(getUserAvaThunk(uid));
               }

@@ -6,11 +6,18 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   increment,
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {
+  deleteObject,
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytes,
+} from "firebase/storage";
 import { auth, db, storage } from "./config";
 
 //? image Picker (for to take photo on phone)
@@ -61,15 +68,15 @@ export const uploadAvaToServer = async (uri) => {
 
   await uploadBytes(storageRef, file, metadata);
 
-  const result = await getDownloadURL(storageRef);
-  return result;
+  const url = await getDownloadURL(storageRef);
+  return { url, avaId };
 };
 
 //? upload Avatar to DB
 
-export const uploadAvaToServerThunk = async ({ url, uid }) => {
+export const uploadAvaToServerThunk = async ({ uid, avaId, url }) => {
   try {
-    await setDoc(doc(db, "avatars", uid), { url });
+    await setDoc(doc(db, "avatars", uid), { avaId, url });
 
     const user = await auth.currentUser;
 
@@ -86,6 +93,7 @@ export const uploadAvaToServerThunk = async ({ url, uid }) => {
 export const cleanAvaToServer = async (uid) => {
   try {
     await updateDoc(doc(db, "avatars", uid), {
+      avaId: null,
       url: null,
     });
     const user = await auth.currentUser;
@@ -93,6 +101,22 @@ export const cleanAvaToServer = async (uid) => {
     updateProfile(user, {
       photoURL: null,
     });
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
+//? delete Avatar in Storage
+
+export const deleteAvaInStorage = async (uid) => {
+  try {
+    const docRef = doc(db, "avatars", uid);
+    const docSnap = await getDoc(docRef);
+    const { avaId } = docSnap.data();
+
+    const storage = getStorage();
+    const avaRef = ref(storage, `avatars/${avaId}`);
+    deleteObject(avaRef);
   } catch (error) {
     console.log(error.message);
   }

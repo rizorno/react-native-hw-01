@@ -25,9 +25,9 @@ export const signUpThunk = createAsyncThunk(
       );
 
       if (avatar !== null) {
-        const userID = user.id;
-        const url = await uploadAvaToServer(avatar);
-        await uploadAvaToServerThunk({ url, userID });
+        const uid = user.uid;
+        const { url, avaId } = await uploadAvaToServer(avatar);
+        await uploadAvaToServerThunk({ uid, url, avaId });
 
         const dataAva = await auth.currentUser;
 
@@ -68,9 +68,9 @@ export const loginThunk = createAsyncThunk(
       const { user } = await signInWithEmailAndPassword(auth, email, password);
 
       if (avatar !== null) {
-        const userID = user.id;
-        const url = await uploadAvaToServer(avatar);
-        await uploadAvaToServerThunk({ url, userID });
+        const uid = user.uid;
+        const { url, avaId } = await uploadAvaToServer(avatar);
+        await uploadAvaToServerThunk({ uid, url, avaId });
 
         const dataAva = await auth.currentUser;
 
