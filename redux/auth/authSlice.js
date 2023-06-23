@@ -3,7 +3,7 @@ import {
   signUpThunk,
   loginThunk,
   logOutThunk,
-  getCurrentUserThunk,
+  getUserAvaThunk,
 } from "./authOperations";
 
 const initialState = {
@@ -12,7 +12,7 @@ const initialState = {
     uid: null,
     name: null,
     email: null,
-    avatarURL: null,
+    avatar: null,
   },
   isLoading: false,
   error: null,
@@ -33,15 +33,17 @@ const authSlice = createSlice({
   redusers: {},
   extraReducers: (builder) => {
     builder
+
       //? signUp
 
       .addCase(signUpThunk.pending, handlePending)
       .addCase(signUpThunk.fulfilled, (state, { payload }) => {
         state.isLoading = false;
-        state.token = payload.accessToken;
+        state.token = payload.token;
         state.user.uid = payload.uid;
         state.user.name = payload.name;
         state.user.email = payload.email;
+        state.user.avatar = payload.avatar;
         state.error = null;
       })
       .addCase(signUpThunk.rejected, handleRejected)
@@ -51,10 +53,11 @@ const authSlice = createSlice({
       .addCase(loginThunk.pending, handlePending)
       .addCase(loginThunk.fulfilled, (state, { payload }) => {
         state.isLoading = false;
-        state.token = payload.accessToken;
+        state.token = payload.token;
         state.user.uid = payload.uid;
         state.user.name = payload.name;
         state.user.email = payload.email;
+        state.user.avatar = payload.avatar;
         state.error = null;
       })
       .addCase(loginThunk.rejected, handleRejected)
@@ -62,40 +65,20 @@ const authSlice = createSlice({
       //? logout
 
       .addCase(logOutThunk.pending, handlePending)
-      .addCase(logOutThunk.fulfilled, (state) => {
+      .addCase(logOutThunk.fulfilled, () => {
         return initialState;
       })
       .addCase(logOutThunk.rejected, handleRejected)
 
-      //? get Current User
+      //? avatar
 
-      .addCase(getCurrentUserThunk.pending, handlePending)
-      .addCase(getCurrentUserThunk.fulfilled, (state, { payload }) => {
+      .addCase(getUserAvaThunk.pending, handlePending)
+      .addCase(getUserAvaThunk.fulfilled, (state, { payload }) => {
         state.isLoading = false;
-        state.user = payload;
+        state.user.avatar = payload.url;
         state.error = null;
       })
-      .addCase(getCurrentUserThunk.rejected, handleRejected);
-
-    //? update User
-
-    // .addCase(updateUserThunk.pending, handlePending)
-    // .addCase(updateUserThunk.fulfilled, (state, { payload }) => {
-    //   state.isLoading = false;
-    //   state.user = payload.user;
-    //   state.error = null;
-    // })
-    // .addCase(updateUserThunk.rejected, handleRejected);
-
-    //? update Avatar
-
-    //       .addCase(updateAvatarThunk.pending, handlePending)
-    //       .addCase(updateAvatarThunk.fulfilled, (state, { payload }) => {
-    //         state.isLoading = false;
-    //         state.user.avatar = payload;
-    //         state.error = null;
-    //       })
-    //       .addCase(updateAvatarThunk.rejected, handleRejected);
+      .addCase(getUserAvaThunk.rejected, handleRejected);
   },
 });
 

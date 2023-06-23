@@ -1,24 +1,24 @@
 import "react-native-gesture-handler";
 import "react-native-get-random-values";
-import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
-  NavigationContainer,
   getFocusedRouteNameFromRoute,
+  NavigationContainer,
 } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { TouchableOpacity, StyleSheet, View } from "react-native";
-import { useSelector, useDispatch } from "react-redux";
-import { getCurrentUserThunk, logOutThunk } from "../redux/auth/authOperations";
+import { TouchableOpacity, View } from "react-native";
+import { logOutThunk } from "../redux/auth/authOperations";
 import { getAccessToken } from "../redux/auth/authSelectors";
 import RegistrationScreen from "./auth/RegistrationScreen";
 import LoginScreen from "./auth/LoginScreen";
 import Home from "./dashboard/Home";
 import CommentsScreen from "./dashboard/CommentsScreen";
 import MapScreen from "./dashboard/MapScreen";
-import { logOut, arrowLeft } from "../images/iconsSVG";
+import { arrowLeft, logOut } from "../images/iconsSVG";
 
 const getHeaderTitle = (route) => {
   const routeName = getFocusedRouteNameFromRoute(route) ?? "Posts";
+
   switch (routeName) {
     case "Posts":
       return "Posts";
@@ -42,10 +42,6 @@ const Main = () => {
   const token = useSelector(getAccessToken);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    token && dispatch(getCurrentUserThunk());
-  }, [dispatch, token]);
-
   return (
     <NavigationContainer>
       {!token ? (
@@ -63,7 +59,6 @@ const Main = () => {
         </AuthStack.Navigator>
       ) : (
         <MainStack.Navigator
-          initialRouteName="Registration"
           screenOptions={{
             headerBackImage: () => arrowLeft,
             headerBackTitleVisible: false,
@@ -81,7 +76,8 @@ const Main = () => {
           <MainStack.Screen
             name="Home"
             component={Home}
-            options={({ navigation, route }) => ({
+            options={({ route }) => ({
+              headerShown: getHeaderTitle(route) === "Profile" ? false : true,
               headerTitle: getHeaderTitle(route),
               headerBackImage: () => {},
               headerBackTitleVisible: false,
@@ -118,13 +114,3 @@ const Main = () => {
 };
 
 export default Main;
-
-const styles = StyleSheet.create({
-  headerTitleStyle: {
-    borderBottomColor: "rgba(0, 0, 0, 0.3)",
-    color: "#212121",
-    fontFamily: "Roboto_Medium",
-    fontSize: 17,
-    lineHeight: 22,
-  },
-});

@@ -2,32 +2,57 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile,
   signOut,
+  updateProfile,
 } from "firebase/auth";
-import { auth } from "../../firebase/config";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../../firebase/config";
+import {
+  uploadAvaToServer,
+  uploadAvaToServerThunk,
+} from "../../firebase/hooks";
 
 //? register
 
 export const signUpThunk = createAsyncThunk(
   "auth/register",
-  async ({ name, userEmail, password }, { rejectWithValue }) => {
+  async ({ name, userEmail, password, avatar }, { rejectWithValue }) => {
     try {
-      await createUserWithEmailAndPassword(auth, userEmail, password);
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        userEmail,
+        password
+      );
 
-      const user = await auth.currentUser;
+      if (avatar !== null) {
+        const userID = user.id;
+        const url = await uploadAvaToServer(avatar);
+        await uploadAvaToServerThunk({ url, userID });
 
-      await updateProfile(user, { displayName: name });
+        const dataAva = await auth.currentUser;
 
-      const { accessToken, uid, displayName, email } = await auth.currentUser;
+        updateProfile(dataAva, {
+          photoURL: url,
+        });
+      }
 
-      const userInfo = {
-        accessToken,
-        uid,
-        name: displayName,
-        email,
+      const dataName = await auth.currentUser;
+
+      await updateProfile(dataName, {
+        displayName: name,
+      });
+
+      const data = await auth.currentUser;
+
+      const userData = {
+        token: data.accessToken,
+        uid: data.uid,
+        name: data.displayName,
+        email: data.email,
+        avatar: data.photoURL,
       };
-      return userInfo;
+
+      return userData;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -38,16 +63,33 @@ export const signUpThunk = createAsyncThunk(
 
 export const loginThunk = createAsyncThunk(
   "auth/login",
-  async ({ email, password }, { rejectWithValue }) => {
+  async ({ email, password, avatar }, { rejectWithValue }) => {
     try {
       const { user } = await signInWithEmailAndPassword(auth, email, password);
-      const userInfo = {
-        accessToken: user.accessToken,
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
+
+      if (avatar !== null) {
+        const userID = user.id;
+        const url = await uploadAvaToServer(avatar);
+        await uploadAvaToServerThunk({ url, userID });
+
+        const dataAva = await auth.currentUser;
+
+        updateProfile(dataAva, {
+          photoURL: url,
+        });
+      }
+
+      const data = await auth.currentUser;
+
+      const userData = {
+        token: data.accessToken,
+        uid: data.uid,
+        name: data.displayName,
+        email: data.email,
+        avatar: data.photoURL,
       };
-      return userInfo;
+
+      return userData;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -67,28 +109,17 @@ export const logOutThunk = createAsyncThunk(
   }
 );
 
-//? get currentUser
+//? get User Avatar from DB
 
-export const getCurrentUserThunk = createAsyncThunk(
-  "auth/getUser",
-  async (_, { rejectWithValue, getState }) => {
+export const getUserAvaThunk = createAsyncThunk(
+  "auth/getAvatar",
+  async (uid, { rejectWithValue }) => {
     try {
-      const token = getState().auth.token;
-      if (!token) {
-        return rejectWithValue("No token");
-      } else {
-        await onAuthStateChanged(auth, (user) => {
-          if (user) {
-            const userUpdateProfile = {
-              uid: user.uid,
-              name: user.displayName,
-              email: user.email,
-              avatarURL: user.avatarURL,
-            };
-            return userUpdateProfile;
-          }
-        });
-      }
+      const docRef = doc(db, "avatars", uid);
+      const docSnap = await getDoc(docRef);
+      const result = docSnap.data();
+
+      return result;
     } catch (error) {
       return rejectWithValue(error.message);
     }

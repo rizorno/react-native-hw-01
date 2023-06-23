@@ -9,8 +9,11 @@ import Main from "./Screens/Main";
 
 const App = () => {
   const [fontsLoaded, error] = useFonts({
+    // eslint-disable-next-line no-undef
     Roboto_Bold: require("./assets/fonts/Roboto/Roboto-Bold.ttf"),
+    // eslint-disable-next-line no-undef
     Roboto_Medium: require("./assets/fonts/Roboto/Roboto-Medium.ttf"),
+    // eslint-disable-next-line no-undef
     Roboto_Regular: require("./assets/fonts/Roboto/Roboto-Regular.ttf"),
   });
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   Image,
   Keyboard,
@@ -12,16 +12,21 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { nanoid } from "nanoid";
+import PropTypes from "prop-types";
 import { Camera } from "expo-camera";
-import * as MediaLibrary from "expo-media-library";
 import * as Location from "expo-location";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, addDoc } from "firebase/firestore";
-import { db, storage } from "../../firebase/config";
+import * as MediaLibrary from "expo-media-library";
+import { uploadPhotoToServer } from "../../firebase/hooks";
+import { getUser } from "../../redux/auth/authSelectors";
+import {
+  uploadPostToServerThunk,
+  getAllPostsThunk,
+  getUserPostsThunk,
+} from "../../redux/dashboard/postOperations";
 import { camera, local, trash } from "../../images/iconsSVG";
 
 const initialState = {
+  uid: null,
   pictureMetaData: null,
   pictureCameraURI: null,
   name: "",
@@ -30,9 +35,11 @@ const initialState = {
   coords: "",
 };
 
+// eslint-disable-next-line no-undef
 const { GOOGLE_MAP_KEY } = process.env;
 
 const CreatePostsScreen = ({ navigation }) => {
+  const { uid } = useSelector(getUser);
   const [state, setState] = useState(initialState);
   const [openCamera, setOpenCamera] = useState(true);
   const [hasPermission, setHasPermission] = useState(null);
@@ -43,31 +50,39 @@ const CreatePostsScreen = ({ navigation }) => {
   useEffect(() => {
     (async () => {
       let { status } = await Camera.requestCameraPermissionsAsync();
+
       if (status !== "granted") {
         console.log("Permission to access camera was denied");
         return;
       }
+
       let { valid = status } =
         await Location.requestForegroundPermissionsAsync();
+
       if (valid !== "granted") {
         console.log("Permission to access location was denied");
       }
 
+      // eslint-disable-next-line no-unused-vars
       const result = await MediaLibrary.requestPermissionsAsync();
-      setHasPermission({ ...state, camera: "granted" });
+
+      setHasPermission((prevState) => ({ ...prevState, camera: "granted" }));
 
       const position = await Location.getCurrentPositionAsync({});
+
       const coords = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       };
+
       const currentLocal = await Location.reverseGeocodeAsync(
         coords,
         GOOGLE_MAP_KEY
       );
 
-      setState({
-        ...state,
+      setState((prevState) => ({
+        ...prevState,
+        uid,
         coords,
         local: {
           name: currentLocal[0].name,
@@ -78,8 +93,9 @@ const CreatePostsScreen = ({ navigation }) => {
           region: currentLocal[0].region,
           country: currentLocal[0].country,
         },
-      });
-      setHasPermission({ ...state, location: "granted" });
+      }));
+
+      setHasPermission((prevState) => ({ ...prevState, location: "granted" }));
 
       const blurScreen = navigation.addListener("blur", () => {
         setOpenCamera(true);
@@ -88,59 +104,25 @@ const CreatePostsScreen = ({ navigation }) => {
 
       return blurScreen;
     })();
-  }, [openCamera, navigation]);
-
-  const uploadPhotoToServer = async (uriPicture) => {
-    const response = await fetch(uriPicture);
-    const file = await response.blob();
-
-    const metadata = { contentType: "image/jpeg" };
-
-    const postId = nanoid();
-    const storageRef = ref(storage, `posts/${postId}`);
-
-    const uploadTask = await uploadBytes(storageRef, file, metadata);
-
-    let postURL = "";
-    const downloadTask = await getDownloadURL(storageRef).then((url) => {
-      postURL = url;
-      return postURL;
-    });
-
-    return postURL;
-  };
-
-  const uploadPostToServer = async () => {
-    const pictureURL = await uploadPhotoToServer(state.pictureCameraURI);
-
-    const dataPost = {
-      picture: pictureURL,
-      title: state.name,
-      localisation: state.place,
-      local: state.local,
-      coords: state.coords,
-    };
-
-    try {
-      const docRef = await addDoc(collection(db, "posts"), dataPost);
-      // console.log("Document written with ID: ", docRef.id);
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
-  };
+  }, [openCamera, navigation, uid]);
 
   const onSubmit = () => {
-    if (
-      state.pictureCameraURI === null ||
-      state.name === "" ||
-      state.place === ""
-    ) {
+    const { pictureCameraURI, name, place } = state;
+
+    if (pictureCameraURI === null || name === "" || place === "") {
       return;
     }
 
-    uploadPostToServer();
+    uploadPhotoToServer(state.pictureCameraURI);
+
+    dispatch(uploadPostToServerThunk(state));
+
+    dispatch(getAllPostsThunk());
+
+    dispatch(getUserPostsThunk(uid));
 
     setState(initialState);
+
     navigation.navigate("Posts");
     setOpenCamera(true);
   };
@@ -186,11 +168,12 @@ const CreatePostsScreen = ({ navigation }) => {
                     const savedPicture = await MediaLibrary.createAssetAsync(
                       uri
                     );
-                    setState({
-                      ...state,
+                    setState((prevState) => ({
+                      ...prevState,
                       pictureCameraURI: savedPicture.uri,
                       pictureMetaData: savedPicture,
-                    });
+                    }));
+                    console.log(state);
                     setOpenCamera(false);
                   }
                 }}
@@ -245,9 +228,12 @@ const CreatePostsScreen = ({ navigation }) => {
                   placeholderTextColor="#BDBDBD"
                   maxLength={250}
                   autoComplete="off"
+                  keyboardType="default"
                   autoCorrect={false}
                   value={state.name}
-                  onChangeText={(value) => setState({ ...state, name: value })}
+                  onChangeText={(value) =>
+                    setState((prevState) => ({ ...prevState, name: value }))
+                  }
                 />
 
                 <View style={styles.inputWrapper}>
@@ -260,11 +246,11 @@ const CreatePostsScreen = ({ navigation }) => {
                     placeholderTextColor="#BDBDBD"
                     maxLength={250}
                     autoComplete="off"
+                    keyboardType="default"
                     autoCorrect={false}
                     value={state.place}
-                    defaultValue={`${state.local.name}, ${state.local.district}, ${state.local.city}, ${state.local.region}, ${state.local.country}`}
                     onChangeText={(value) =>
-                      setState({ ...state, place: value })
+                      setState((prevState) => ({ ...prevState, place: value }))
                     }
                   />
                 </View>
@@ -500,5 +486,9 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
 });
+
+CreatePostsScreen.propTypes = {
+  navigation: PropTypes.object.isRequired,
+};
 
 export default CreatePostsScreen;

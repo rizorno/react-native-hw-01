@@ -14,23 +14,22 @@ import {
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { uploadAva } from "../../firebase/hooks";
 import { loginThunk } from "../../redux/auth/authOperations";
 import bgAndroid from "../../images/bgAndroid.png";
 import bgIOS from "../../images/bgIOS.png";
 import { btnAdd, btnRemove } from "../../images/iconsSVG";
 
-import { USER } from "../DATA";
-
 const initialState = {
   email: "",
   password: "",
+  avatar: null,
 };
 
 const LoginScreen = () => {
   const [state, setState] = useState(initialState);
   const [isFocused, setIsFocused] = useState(initialState);
   const [hidden, setHidden] = useState(true);
-  const [ava, setAva] = useState("");
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -42,7 +41,6 @@ const LoginScreen = () => {
     Keyboard.dismiss();
     setState(initialState);
     setIsFocused(initialState);
-    // navigation.navigate("Home");
   };
 
   return (
@@ -58,21 +56,37 @@ const LoginScreen = () => {
             keyboardVerticalOffset={-180}
           >
             <View style={styles.container}>
-              <View style={(ava && styles.avaImageBox) || styles.avaNoImageBox}>
-                {ava && <Image source={ava} style={styles.avaImage} />}
+              <View
+                style={
+                  (state.avatar && styles.avaImageBox) || styles.avaNoImageBox
+                }
+              >
+                {state.avatar && (
+                  <Image
+                    source={{ uri: state.avatar }}
+                    style={styles.avaImage}
+                  />
+                )}
               </View>
 
               <TouchableOpacity
-                style={ava ? styles.avaRemoveBox : styles.avaAddBox}
-                onPress={() => {
-                  if (ava === "") {
-                    setAva(USER[0].ava);
+                style={state.avatar ? styles.avaRemoveBox : styles.avaAddBox}
+                onPress={async () => {
+                  if (state.avatar === null) {
+                    const assets = await uploadAva();
+                    setState((prevState) => ({
+                      ...prevState,
+                      avatar: assets[0].uri,
+                    }));
                   } else {
-                    return setAva("");
+                    setState((prevState) => ({
+                      ...prevState,
+                      avatar: null,
+                    }));
                   }
                 }}
               >
-                {ava ? btnRemove : btnAdd}
+                {state.avatar ? btnRemove : btnAdd}
               </TouchableOpacity>
 
               <Text style={styles.title}>Log in</Text>
@@ -92,6 +106,7 @@ const LoginScreen = () => {
                 keyboardType="email-address"
                 value={state.email}
                 defaultValue={state.email}
+                onSubmitEditing={handleSubmit}
                 onChangeText={(value) =>
                   setState((prevState) => ({ ...prevState, email: value }))
                 }
@@ -127,6 +142,7 @@ const LoginScreen = () => {
                   secureTextEntry={hidden === true ? true : false}
                   value={state.password}
                   defaultValue={state.password}
+                  onSubmitEditing={handleSubmit}
                   onChangeText={(value) =>
                     setState((prevState) => ({ ...prevState, password: value }))
                   }
@@ -165,7 +181,7 @@ const LoginScreen = () => {
                   setState(initialState);
                 }}
               >
-                Don't have an account? Sign up
+                Don&apos;t have an account? Sign up
               </Text>
             </View>
           </KeyboardAvoidingView>
@@ -181,7 +197,6 @@ const styles = StyleSheet.create({
   },
   bgImage: {
     flex: 1,
-    justifyContent: "center",
     justifyContent: "flex-end",
   },
 
@@ -218,6 +233,7 @@ const styles = StyleSheet.create({
   avaImage: {
     width: "100%",
     height: "100%",
+    borderRadius: 16,
   },
   avaAddBox: {
     position: "absolute",

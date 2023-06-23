@@ -11,7 +11,7 @@ const Home = () => {
   return (
     <Tabs.Navigator
       initialRouteName="Posts"
-      screenOptions={({ route, navigation }) => ({
+      screenOptions={({ navigation, route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused }) => {
           let iconName;

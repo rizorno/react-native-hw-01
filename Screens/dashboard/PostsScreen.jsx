@@ -1,60 +1,56 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   FlatList,
   Image,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import PropTypes from "prop-types";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebase/config";
-import { getCurrentUserThunk } from "../../redux/auth/authOperations";
+import {
+  uploadLikeToServer,
+  incrementLikeToServer,
+  decrementLikeToServer,
+} from "../../firebase/hooks";
+import {
+  getAllPostsThunk,
+  getUserPostsThunk,
+  getAllCommentsThunk,
+  getAllLikesThunk,
+} from "../../redux/dashboard/postOperations";
 import { getUser } from "../../redux/auth/authSelectors";
-import { getPosts } from "../../redux/dashboard/postSelectors";
-import { setPostsDB } from "../../redux/dashboard/postSlise";
-import { getAllPostsThunk } from "../../redux/dashboard/postOperations";
-import { comment, local } from "../../images/iconsSVG";
-import avaUser from "../../images/avaUser.png";
+import {
+  selectPosts,
+  getComments,
+  getLikes,
+} from "../../redux/dashboard/postSelectors";
+import {
+  comment,
+  commentColor,
+  like,
+  likeColor,
+  local,
+} from "../../images/iconsSVG";
 
+// eslint-disable-next-line no-unused-vars
 const Tabs = createBottomTabNavigator();
 
 const PostsScreen = ({ navigation }) => {
-  const userInfo = useSelector(getUser);
-  const [user, setUser] = useState(userInfo);
-  const postsDataArr = useSelector(getPosts);
-  const [posts, setPosts] = useState(postsDataArr);
+  const { uid, name, email, avatar } = useSelector(getUser);
+  const posts = useSelector(selectPosts);
+  const comments = useSelector(getComments);
+  const likes = useSelector(getLikes);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getCurrentUserThunk());
     dispatch(getAllPostsThunk());
-    getAllPosts();
-  }, [dispatch]);
-
-  const getAllPosts = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "posts"));
-
-      let postsArr = [];
-      await querySnapshot.forEach((doc) => {
-        postsArr.push({
-          id: doc.id,
-          ...doc.data(),
-        });
-        return postsArr;
-      });
-
-      setPosts(postsArr);
-      // setPostsDB(postsArr);
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  };
+    dispatch(getUserPostsThunk(uid));
+    dispatch(getAllCommentsThunk());
+    dispatch(getAllLikesThunk());
+  }, [dispatch, uid]);
 
   return (
     <View style={styles.container}>
@@ -63,19 +59,39 @@ const PostsScreen = ({ navigation }) => {
           style={styles.userPhotoBox}
           onPress={() => navigation.navigate("Profile")}
         >
-          {/* <Image source={{uri: avatarURL}} style={styles.userPhoto} /> */}
-          <Image source={avaUser} style={styles.userPhoto} />
+          <Image source={{ uri: avatar }} style={styles.userPhoto} />
         </TouchableOpacity>
         <View style={styles.userInfoBox}>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userMail}>{user.email}</Text>
+          <Text style={styles.userName}>{name}</Text>
+          <Text style={styles.userMail}>{email}</Text>
         </View>
       </View>
 
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
+          const totalComments = comments.filter(
+            (value) => value.postId === item.id
+          ).length;
+
+          const myComments = comments.filter(
+            (value) => value.postId === item.id && value.user_id === uid
+          ).length;
+
+          const totalLikes = () => {
+            const likesArr = likes.filter((value) => value.postId === item.id);
+            const total = likesArr.reduce((previousValue, element) => {
+              return previousValue + element.likes;
+            }, 0);
+            return total;
+          };
+
+          const myLikes = likes.filter(
+            (value) => value.postId === item.id && value.user_id === uid
+          );
+
           return (
             <View style={styles.postBox}>
               <View>
@@ -95,8 +111,51 @@ const PostsScreen = ({ navigation }) => {
                     })
                   }
                 >
-                  <View>{comment}</View>
-                  <Text style={styles.commentText}>{item.comments}</Text>
+                  <View>{myComments === 0 ? comment : commentColor}</View>
+                  <Text
+                    style={
+                      myComments === 0
+                        ? styles.commentText
+                        : styles.commentTextColor
+                    }
+                  >
+                    {totalComments}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.infoBoxLike}
+                  onPress={async () => {
+                    if (myLikes.length === 0) {
+                      await uploadLikeToServer({ id: item.id, uid, name });
+                    } else if (myLikes[0].likes === 0) {
+                      await incrementLikeToServer({
+                        id: item.id,
+                        likeMy: myLikes[0].id,
+                      });
+                    } else {
+                      await decrementLikeToServer({
+                        id: item.id,
+                        likeMy: myLikes[0].id,
+                      });
+                    }
+                    dispatch(getAllLikesThunk());
+                  }}
+                >
+                  <View>
+                    {myLikes.length === 0 || myLikes[0].likes === 0
+                      ? like
+                      : likeColor}
+                  </View>
+                  <Text
+                    style={
+                      myLikes.length === 0 || myLikes[0].likes === 0
+                        ? styles.likeText
+                        : styles.likeTextColor
+                    }
+                  >
+                    {totalLikes()}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -128,7 +187,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     paddingTop: 32,
     paddingLeft: 16,
-    //  paddingRight: 11,
     paddingRight: 14,
   },
   userWrapper: {
@@ -145,6 +203,7 @@ const styles = StyleSheet.create({
   userPhoto: {
     width: "100%",
     height: "100%",
+    borderRadius: 16,
   },
   userName: {
     color: "#212121",
@@ -169,7 +228,7 @@ const styles = StyleSheet.create({
   },
   myPostTitle: {
     color: "#212121",
-    fontFamily: "Roboto_Regular",
+    fontFamily: "Roboto_Medium",
     fontSize: 16,
     lineHeight: 19,
     marginBottom: 10,
@@ -190,7 +249,33 @@ const styles = StyleSheet.create({
   },
   commentText: {
     color: "#BDBDBD",
-    fontFamily: "Roboto_Medium",
+    fontFamily: "Roboto_Regular",
+    fontSize: 16,
+    lineHeight: 19,
+    marginLeft: 8,
+  },
+  commentTextColor: {
+    color: "#212121",
+    fontFamily: "Roboto_Regular",
+    fontSize: 16,
+    lineHeight: 19,
+    marginLeft: 8,
+  },
+  infoBoxLike: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginRight: "auto",
+  },
+  likeText: {
+    color: "#BDBDBD",
+    fontFamily: "Roboto_Regular",
+    fontSize: 16,
+    lineHeight: 19,
+    marginLeft: 8,
+  },
+  likeTextColor: {
+    color: "#212121",
+    fontFamily: "Roboto_Regular",
     fontSize: 16,
     lineHeight: 19,
     marginLeft: 8,
@@ -201,12 +286,16 @@ const styles = StyleSheet.create({
   localText: {
     maxWidth: 255,
     color: "#212121",
-    fontFamily: "Roboto_Medium",
+    fontFamily: "Roboto_Regular",
     fontSize: 16,
     lineHeight: 19,
     textDecorationLine: "underline",
     marginRight: 10,
   },
 });
+
+PostsScreen.propTypes = {
+  navigation: PropTypes.object.isRequired,
+};
 
 export default PostsScreen;

@@ -14,9 +14,9 @@ import { authReducer } from "./auth/authSlice";
 import { postReducer } from "./dashboard/postSlise";
 
 const persistConfig = {
-  key: "root",
+  key: "auth",
   storage: AsyncStorage,
-  //   whitelist: ['token'],
+  whitelist: ["token", "user"],
 };
 
 const persistedReducer = persistReducer(persistConfig, authReducer);
@@ -26,6 +26,7 @@ export const store = configureStore({
     auth: persistedReducer,
     posts: postReducer,
   },
+
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

@@ -14,24 +14,23 @@ import {
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { uploadAva } from "../../firebase/hooks";
 import { signUpThunk } from "../../redux/auth/authOperations";
 import bgAndroid from "../../images/bgAndroid.png";
 import bgIOS from "../../images/bgIOS.png";
 import { btnAdd, btnRemove } from "../../images/iconsSVG";
 
-import { USER } from "../DATA";
-
 const initialState = {
   name: "",
   userEmail: "",
   password: "",
+  avatar: null,
 };
 
 const RegistrationScreen = () => {
   const [state, setState] = useState(initialState);
   const [isFocused, setIsFocused] = useState(initialState);
   const [hidden, setHidden] = useState(true);
-  const [ava, setAva] = useState();
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -58,21 +57,37 @@ const RegistrationScreen = () => {
             keyboardVerticalOffset={-180}
           >
             <View style={styles.container}>
-              <View style={(ava && styles.avaImageBox) || styles.avaNoImageBox}>
-                {ava && <Image source={ava} style={styles.avaImage} />}
+              <View
+                style={
+                  (state.avatar && styles.avaImageBox) || styles.avaNoImageBox
+                }
+              >
+                {state.avatar && (
+                  <Image
+                    source={{ uri: state.avatar }}
+                    style={styles.avaImage}
+                  />
+                )}
               </View>
 
               <TouchableOpacity
-                style={ava ? styles.avaRemoveBox : styles.avaAddBox}
-                onPress={() => {
-                  if (ava === "") {
-                    setAva(USER[0].ava);
+                style={state.avatar ? styles.avaRemoveBox : styles.avaAddBox}
+                onPress={async () => {
+                  if (state.avatar === null) {
+                    const assets = await uploadAva();
+                    setState((prevState) => ({
+                      ...prevState,
+                      avatar: assets[0].uri,
+                    }));
                   } else {
-                    return setAva("");
+                    setState((prevState) => ({
+                      ...prevState,
+                      avatar: null,
+                    }));
                   }
                 }}
               >
-                {ava ? btnRemove : btnAdd}
+                {state.avatar ? btnRemove : btnAdd}
               </TouchableOpacity>
 
               <Text style={styles.title}>Registration</Text>
@@ -91,6 +106,7 @@ const RegistrationScreen = () => {
                 keyboardType="default"
                 value={state.name}
                 defaultValue={state.name}
+                onSubmitEditing={handleSubmit}
                 onChangeText={(value) =>
                   setState((prevState) => ({ ...prevState, name: value }))
                 }
@@ -120,6 +136,7 @@ const RegistrationScreen = () => {
                 keyboardType="email-address"
                 value={state.userEmail}
                 defaultValue={state.userEmail}
+                onSubmitEditing={handleSubmit}
                 onChangeText={(value) =>
                   setState((prevState) => ({ ...prevState, userEmail: value }))
                 }
@@ -153,6 +170,7 @@ const RegistrationScreen = () => {
                   secureTextEntry={hidden === true ? true : false}
                   value={state.password}
                   defaultValue={state.password}
+                  onSubmitEditing={handleSubmit}
                   onChangeText={(value) =>
                     setState((prevState) => ({ ...prevState, password: value }))
                   }
@@ -207,7 +225,6 @@ const styles = StyleSheet.create({
   },
   bgImage: {
     flex: 1,
-    justifyContent: "center",
     justifyContent: "flex-end",
   },
 
@@ -244,6 +261,7 @@ const styles = StyleSheet.create({
   avaImage: {
     width: "100%",
     height: "100%",
+    borderRadius: 16,
   },
   avaAddBox: {
     position: "absolute",

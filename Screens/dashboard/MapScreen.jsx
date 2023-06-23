@@ -1,5 +1,6 @@
 import { Dimensions, StyleSheet, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import PropTypes from "prop-types";
 
 const MapScreen = ({ route }) => {
   const { latitude, longitude } = route.params.postCoords;
@@ -18,8 +19,6 @@ const MapScreen = ({ route }) => {
         }}
         mapType="standard"
         minZoomLevel={15}
-        //   onMapReady={() => console.log("Map is ready")}
-        //   onRegionChange={() => console.log("Region change")}
       >
         <Marker
           title={localisation}
@@ -43,5 +42,9 @@ const styles = StyleSheet.create({
     height: Dimensions.get("window").height,
   },
 });
+
+MapScreen.propTypes = {
+  route: PropTypes.object.isRequired,
+};
 
 export default MapScreen;
