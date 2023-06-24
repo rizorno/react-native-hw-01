@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import Spinner from "react-native-loading-spinner-overlay";
 import { uploadAva } from "../../firebase/hooks";
 import { signUpThunk } from "../../redux/auth/authOperations";
 import bgAndroid from "../../images/bgAndroid.png";
@@ -31,6 +32,7 @@ const RegistrationScreen = () => {
   const [state, setState] = useState(initialState);
   const [isFocused, setIsFocused] = useState(initialState);
   const [hidden, setHidden] = useState(true);
+  const [spin, setSpin] = useState({ spinner: false });
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -38,6 +40,9 @@ const RegistrationScreen = () => {
     if (state.name === "" || state.userEmail === "" || state.password === "") {
       return;
     }
+
+    setSpin({ spinner: true });
+
     dispatch(signUpThunk(state));
     Keyboard.dismiss();
     setState(initialState);
@@ -47,6 +52,11 @@ const RegistrationScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.containerMain}>
+        <Spinner
+          visible={spin.spinner}
+          textContent={"Loading..."}
+          textStyle={styles.spinnerTextStyle}
+        />
         <ImageBackground
           source={Platform.OS == "ios" ? bgAndroid : bgIOS}
           resizeMode="cover"
@@ -222,6 +232,9 @@ const RegistrationScreen = () => {
 const styles = StyleSheet.create({
   containerMain: {
     flex: 1,
+  },
+  spinnerTextStyle: {
+    color: "#ffffff",
   },
   bgImage: {
     flex: 1,

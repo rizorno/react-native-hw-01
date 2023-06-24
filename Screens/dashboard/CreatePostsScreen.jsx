@@ -173,7 +173,6 @@ const CreatePostsScreen = ({ navigation }) => {
                       pictureCameraURI: savedPicture.uri,
                       pictureMetaData: savedPicture,
                     }));
-                    console.log(state);
                     setOpenCamera(false);
                   }
                 }}
