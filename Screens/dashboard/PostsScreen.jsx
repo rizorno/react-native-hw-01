@@ -59,7 +59,11 @@ const PostsScreen = ({ navigation }) => {
           style={styles.userPhotoBox}
           onPress={() => navigation.navigate("Profile")}
         >
-          <Image source={{ uri: avatar }} style={styles.userPhoto} />
+          <View style={styles.userNoPhotoBox}>
+            {avatar && (
+              <Image source={{ uri: avatar }} style={styles.userPhoto} />
+            )}
+          </View>
         </TouchableOpacity>
         <View style={styles.userInfoBox}>
           <Text style={styles.userName}>{name}</Text>
@@ -194,6 +198,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     columnGap: 8,
     marginBottom: 32,
+  },
+  userNoPhotoBox: {
+    width: 60,
+    height: 60,
+    backgroundColor: "#F6F6F6",
+    borderWidth: 1,
+    borderColor: "#F6F6F6",
+    borderRadius: 16,
   },
   userPhotoBox: {
     width: 60,
